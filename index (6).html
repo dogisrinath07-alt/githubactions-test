@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Notes App</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 22px; }
+  #note-input { width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px; }
+  #add-btn { margin-top: 8px; padding: 8px 16px; cursor: pointer; }
+  #notes-list { margin-top: 24px; padding: 0; list-style: none; }
+  #notes-list li { padding: 10px; border-bottom: 1px solid #ddd; }
+  #status { color: #a32d2d; font-size: 13px; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h1>My Notes</h1>
+
+<!-- IMPORTANT: replace this with your actual API Gateway Invoke URL from Step 4 -->
+<script>
+  const API_URL = "https://jp4cn0jo3m.execute-api.eu-north-1.amazonaws.com";
+</script>
+
+<textarea id="note-input" rows="3" placeholder="Write a note..."></textarea>
+<br>
+<button id="add-btn">Add Note</button>
+<div id="status"></div>
+
+<ul id="notes-list"></ul>
+
+<script>
+  const notesList = document.getElementById("notes-list");
+  const noteInput = document.getElementById("note-input");
+  const addBtn = document.getElementById("add-btn");
+  const status = document.getElementById("status");
+
+  async function loadNotes() {
+    status.textContent = "";
+    try {
+      const res = await fetch(`${API_URL}/notes`);
+      if (!res.ok) throw new Error("Failed to load notes");
+      const data = await res.json();
+
+      notesList.innerHTML = "";
+      data.notes.forEach(note => {
+        const li = document.createElement("li");
+        li.textContent = note.text;
+        notesList.appendChild(li);
+      });
+    } catch (err) {
+      status.textContent = "Error loading notes: " + err.message;
+    }
+  }
+
+  async function addNote() {
+    const text = noteInput.value.trim();
+    if (!text) return;
+
+    status.textContent = "";
+    try {
+      const res = await fetch(`${API_URL}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      if (!res.ok) throw new Error("Failed to add note");
+
+      noteInput.value = "";
+      await loadNotes();
+    } catch (err) {
+      status.textContent = "Error adding note: " + err.message;
+    }
+  }
+
+  addBtn.addEventListener("click", addNote);
+  loadNotes(); // load existing notes when the page opens
+</script>
+
+</body>
+</html>
